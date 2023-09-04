@@ -1,0 +1,35 @@
+# code: language=ansible
+---
+# Defaults for docker network profile
+docker_network_defaults:
+  manage: true
+  state: present
+
+# Defaults dictionary for docker role
+docker_defaults:
+  debug: '{{ docker_debug }}'
+  upstream:
+    key:
+      file: '{{ docker_upstream_key_file }}'
+      home: '{{ docker_upstream_key_home }}'
+      url: '{{ docker_upstream_key_url }}'
+    package:
+      file: '{{ docker_upstream_package_file }}'
+      home: '{{ docker_upstream_package_home }}'
+      url: '{{ docker_upstream_package_url }}'
+    manage: '{{ docker_upstream_manage }}'
+    state: '{{ docker_upstream_state }}'
+  support:
+    packages: '{{ docker_support_packages }}'
+    state: present
+    manage: true
+  main:
+    packages: '{{ docker_main_packages }}'
+    state: present
+    manage: true
+  service:
+    name: '{{ docker_service_name }}'
+    enabled: '{{ docker_service_enabled }}'
+    state: '{{ docker_service_state }}'
+    manage: '{{ docker_service_manage }}'
+  networks: []

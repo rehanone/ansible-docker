@@ -1,0 +1,18 @@
+# code: language=ansible
+---
+docker_support_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+
+docker_main_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
+
+docker_upstream_key_url: 'https://download.docker.com/linux/debian/gpg'
+docker_upstream_package_url: 'https://download.docker.com/linux/debian'
+docker_upstream_manage: true
+docker_upstream_state: present

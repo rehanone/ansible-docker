@@ -1,0 +1,6 @@
+---
+- name: Install docker on localhost
+  hosts: localhost
+  remote_user: root
+  roles:
+    - rehanone.docker
