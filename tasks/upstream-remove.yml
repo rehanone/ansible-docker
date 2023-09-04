@@ -1,0 +1,13 @@
+# code: language=ansible
+---
+- name: Remove upstream package source file
+  become: true
+  ansible.builtin.file:
+    path: '{{ upstream.package.home }}/{{ upstream.package.file }}'
+    state: absent
+
+- name: Remove upstream key file
+  become: true
+  ansible.builtin.file:
+    path: '{{ upstream.key.home }}/{{ upstream.key.file }}'
+    state: absent

@@ -1,0 +1,4 @@
+# code: language=ansible
+---
+- name: Main docker tasks
+  ansible.builtin.include_tasks: docker.yml

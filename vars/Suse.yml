@@ -1,0 +1,12 @@
+# code: language=ansible
+---
+docker_support_packages:
+  - curl
+
+docker_main_packages:
+  - docker
+
+docker_upstream_key_url: ''
+docker_upstream_package_url: ''
+docker_upstream_manage: false
+docker_upstream_state: absent

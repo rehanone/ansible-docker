@@ -1,0 +1,99 @@
+# code: language=ansible
+---
+# Main tasks file for role
+- name: Setting OS variables
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts.distribution }}.yml"
+        - "{{ ansible_facts.os_family }}.yml"
+        - default.yml
+      paths:
+        - vars
+
+- name: Set docker_networks_with_defaults
+  ansible.builtin.set_fact:
+    docker_networks_with_defaults: >-
+      {{
+          docker_networks_with_defaults | default([]) |
+          union( [docker_network_defaults | ansible.builtin.combine(network, recursive=true)] )
+      }}
+  loop: '{{ docker.networks | default([]) }}'
+  loop_control:
+    loop_var: network
+    label: '{{ network.name }}'
+
+- name: Set docker_with_default_networks
+  ansible.builtin.set_fact:
+    docker_with_default_networks:
+      networks: '{{ docker_networks_with_defaults | default([]) }}'
+
+- name: Set docker_config
+  ansible.builtin.set_fact:
+    docker_config: >-
+      {{ docker_defaults |
+        ansible.builtin.combine( (docker | default(docker_defaults)), recursive=true ) |
+        ansible.builtin.combine( (docker_with_default_networks | default([])), recursive=true )
+      }}
+
+- name: Print docker_config dictionary if debug flag is set
+  ansible.builtin.debug:
+    var: docker_config
+  when: docker_config.debug
+
+- name: Setup support packages
+  become: true
+  ansible.builtin.package:
+    name: '{{ package }}'
+    state: '{{ docker_config.support.state }}'
+  when: docker_config.support.manage
+  loop: '{{ docker_config.support.packages }}'
+  loop_control:
+    loop_var: package
+
+- name: Setup | include task > upstream-add.yml
+  ansible.builtin.include_tasks:
+    file: upstream-add.yml
+  vars:
+    upstream: '{{ docker_config.upstream }}'
+  when: docker_config.upstream.state == 'present' and docker_config.upstream.manage
+
+- name: Install | include task > update-cache.yml
+  ansible.builtin.include_tasks:
+    file: update-cache.yml
+  when: docker_config.main.state == 'present' and docker_config.main.manage and ansible_facts['os_family'] == 'Debian'
+
+- name: Setup main packages
+  become: true
+  ansible.builtin.package:
+    name: '{{ package }}'
+    state: '{{ docker_config.main.state }}'
+  when: docker_config.main.manage
+  loop: '{{ docker_config.main.packages }}'
+  loop_control:
+    loop_var: package
+
+- name: Ensure docker service is started
+  ansible.builtin.service:
+    name: '{{ docker_config.service.name }}'
+    enabled: '{{ docker_config.service.enabled }}'
+    state: '{{ docker_config.service.state }}'
+  when: docker_config.main.state == 'present' and docker_config.service.manage
+
+- name: Setup networks
+  community.docker.docker_network:
+    name: '{{ network.name }}'
+    state: '{{ network.state }}'
+  loop: '{{ docker_config.networks }}'
+  when: network.manage
+  loop_control:
+    loop_var: network
+    label: '{{ network.name }}'
+
+- name: Setup | include task > upstream-remove.yml
+  ansible.builtin.include_tasks:
+    file: upstream-remove.yml
+  vars:
+    upstream: '{{ docker_config.upstream }}'
+  when: docker_config.upstream.state == 'absent' and docker_config.upstream.manage

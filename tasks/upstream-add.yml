@@ -1,0 +1,34 @@
+# code: language=ansible
+---
+- name: Ensure upstream key home directory exists
+  become: true
+  ansible.builtin.file:
+    path: '{{ upstream.key.home }}'
+    state: directory
+    mode: '0755'
+
+- name: Download upstream key
+  become: true
+  ansible.builtin.get_url:
+    url: '{{ upstream.key.url }}'
+    dest: '{{ upstream.key.home }}/{{ upstream.key.file }}'
+    mode: 'a+r'
+  register: updated_keyfile
+
+- name: Remove upstream package source file if the key file is updated
+  become: true
+  ansible.builtin.file:
+    path: '{{ upstream.package.home }}/{{ upstream.package.file }}'
+    state: absent
+  when: updated_keyfile.changed # noqa: no-handler
+
+- name: Download and setup upstream apt repository source
+  become: true
+  ansible.builtin.shell: |
+    set -o pipefail
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by={{ upstream.key.home }}/{{ upstream.key.file }}] {{ upstream.package.url }} \
+    $(lsb_release -cs) stable" | sudo tee {{ upstream.package.home }}/{{ upstream.package.file }} > /dev/null
+  args:
+    creates: '{{ upstream.package.home }}/{{ upstream.package.file }}'
+    executable: /bin/bash
