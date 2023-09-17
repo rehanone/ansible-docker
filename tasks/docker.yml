@@ -73,6 +73,7 @@
   loop: '{{ docker_config.main.packages }}'
   loop_control:
     loop_var: package
+  notify: Restart Docker
 
 - name: Ensure docker service is started
   ansible.builtin.service:
