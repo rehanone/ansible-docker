@@ -1,2 +1,6 @@
+# code: language=ansible
 ---
-# handlers file for ansible-docker
+- name: Restart Docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
